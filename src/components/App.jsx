@@ -1,41 +1,78 @@
 import React, { useState } from "react";
 import Header from "./Header";
-import Footer from "./Footer";
-import Note from "./Note";
-import CreateArea from "./CreateArea";
+import AddItemSection from "./AddItemSection.jsx";
+import Tabs from "./Tabs";
+import ItemsContainer from "./ItemsContainer";
+import StatsContainer from "./StatsContainer";
 
 function App() {
-  const [notes, setNotes] = useState([]);
+  const [items, setItems] = useState([
+    { id: 1, text: "Revisar el celular al despertarme", completed: true },
+    { id: 2, text: "Posponer el ejercicio para mañana", completed: false },
+    { id: 3, text: "Comer comida chatarra cuando esté estresado", completed: false }
+  ]);
+  
+  const [activeTab, setActiveTab] = useState("all");
+  const [editingId, setEditingId] = useState(null);
 
-  const addNote = (newNote) => {
-    setNotes((prevNotes) => {
-      return [...prevNotes, newNote];
-    });
+  const addItem = (text) => {
+    const newItem = {
+      id: Date.now(), // Usamos timestamp como ID único
+      text: text,
+      completed: false
+    };
+    setItems(prevItems => [...prevItems, newItem]);
   };
 
-  function deleteItem(id) {
-    setNotes((prevNotes) => {
-      return prevNotes.filter((note, index) => {
-        return index !== id;
-      });
-    });
-  }
+  const deleteItem = (id) => {
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
+  };
+
+  const toggleComplete = (id) => {
+    setItems(prevItems => 
+      prevItems.map(item => 
+        item.id === id ? { ...item, completed: !item.completed } : item
+      )
+    );
+  };
+
+  const editItem = (id, newText) => {
+    setItems(prevItems => 
+      prevItems.map(item => 
+        item.id === id ? { ...item, text: newText } : item
+      )
+    );
+    setEditingId(null);
+  };
+
+  // Filtrar items según la pestaña activa
+  const getFilteredItems = () => {
+    switch(activeTab) {
+      case "active":
+        return items.filter(item => !item.completed);
+      case "completed":
+        return items.filter(item => item.completed);
+      default:
+        return items;
+    }
+  };
 
   return (
-    <div>
+    <div className="app-container">
       <Header />
-      <CreateArea onAdd={addNote} />
-      {notes.map((note, index) => (
-        <Note
-          key={index}
-          id={index}
-          title={note.iTitle}
-          content={note.tContent}
-          onClick={deleteItem}
+      <div className="content-container">
+        <AddItemSection onAdd={addItem} />
+        <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <ItemsContainer 
+          items={getFilteredItems()}
+          onDelete={deleteItem}
+          onToggleComplete={toggleComplete}
+          onEdit={editItem}
+          editingId={editingId}
+          setEditingId={setEditingId}
         />
-      ))}
-      <Note title="Hacer hoy" content="Ir al gimnasio" />
-      <Footer />
+        <StatsContainer items={items} />
+      </div>
     </div>
   );
 }
